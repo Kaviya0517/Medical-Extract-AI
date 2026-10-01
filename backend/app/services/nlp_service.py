@@ -1,6 +1,7 @@
 import hashlib
 import re
 import random
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 try:
@@ -8,7 +9,15 @@ try:
 except Exception:  # pragma: no cover
     spacy = None
 
+try:
+    import joblib
+except Exception:  # pragma: no cover
+    joblib = None
+
 _nlp = None
+_diagnosis_model = None
+_diagnosis_model_loaded = False
+DIAGNOSIS_MODEL_PATH = Path(__file__).resolve().parents[3] / "models" / "diagnosis_classifier.joblib"
 
 DIAGNOSIS_PATTERNS = [
     r"\btype 2 diabetes mellitus\b",
@@ -176,6 +185,32 @@ def get_model():
         except OSError:
             _nlp = False
     return _nlp if _nlp is not None else None
+
+
+def get_diagnosis_model():
+    global _diagnosis_model, _diagnosis_model_loaded
+    if not _diagnosis_model_loaded:
+        _diagnosis_model_loaded = True
+        if joblib is not None and DIAGNOSIS_MODEL_PATH.exists():
+            try:
+                _diagnosis_model = joblib.load(DIAGNOSIS_MODEL_PATH)
+            except Exception:
+                _diagnosis_model = None
+    return _diagnosis_model
+
+
+def predict_trained_diagnosis(text: str) -> Optional[str]:
+    model = get_diagnosis_model()
+    if model is None:
+        return None
+    try:
+        probabilities = model.predict_proba([text])[0]
+        best_index = probabilities.argmax()
+        if probabilities[best_index] < 0.55:
+            return None
+        return str(model.classes_[best_index])
+    except Exception:
+        return None
 
 
 def _extract_with_patterns(text: str, patterns: List[str]) -> List[str]:
@@ -524,6 +559,10 @@ def extract_medical_summary(text: str) -> Dict[str, Any]:
     dosages = [entity["text"] for entity in entities if entity["label"] == "DOSAGE"]
     lab_tests = [entity["text"] for entity in entities if entity["label"] == "LAB_TEST"]
     allergies = [entity["text"] for entity in entities if entity["label"] == "ALLERGY"]
+
+    trained_diagnosis = predict_trained_diagnosis(text) if not diagnoses else None
+    if trained_diagnosis:
+        diagnoses.append(trained_diagnosis)
 
     patient_name, age, gender = parse_patient_metadata(text, entities)
     vitals = parse_vitals_from_text(text)

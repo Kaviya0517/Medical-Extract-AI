@@ -104,6 +104,17 @@ Run the automated backend pytest test suite covering authentication, extraction,
 python -m pytest
 ```
 
+## 🤖 Training the Diagnosis Model
+
+The supplied `dataset/medical_data.csv` is a de-identified MIMIC-style discharge-summary dataset. It contains 744 complete notes, but 434 diagnosis labels; most labels are too rare for reliable supervised learning. The training script therefore keeps the 23 diagnosis classes with at least 5 examples.
+
+Run:
+```bash
+python ml/train_diagnosis_model.py
+```
+
+The script trains a TF-IDF word n-gram model with balanced logistic regression and writes `models/diagnosis_classifier.joblib` plus evaluation metrics. The current held-out result is 44.4% accuracy, 0.365 macro-F1, and 0.415 weighted-F1. The model is an experimental fallback only: the existing clinical rules remain primary, and no model artifact or clinical CSV is committed by default.
+
 ---
 
 ## 📡 API Endpoints Summary

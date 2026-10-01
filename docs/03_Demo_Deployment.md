@@ -24,6 +24,10 @@ The service uses local SQLite when `MONGODB_URL` is not configured. On Render's 
 
 The backend currently allows cross-origin requests for this demo. Keep the Render API URL public only for demonstration use and do not treat the app as a production clinical system.
 
+## Optional Model Deployment
+
+The diagnosis model is trained locally from the private CSV and is ignored by Git by default. To deploy it, securely publish or provision `models/diagnosis_classifier.joblib` through your chosen artifact store, place it at that path in the backend image, and redeploy. Do not publish the source CSV or model without reviewing its privacy and distribution requirements.
+
 ## Local Smoke Check
 
 Build the frontend before deployment:

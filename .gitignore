@@ -20,6 +20,13 @@ frontend/.env.local
 *.db-shm
 *.db-wal
 
+# Generated ML artifacts
+/models/*.joblib
+/models/*.json
+
+# Local clinical training data
+/dataset/*.csv
+
 # Node
 frontend/node_modules/
 
